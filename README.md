@@ -1,4 +1,7 @@
-# Attenzione: lavori in corso
+# Casino Universe Simulator
+
+Simulatore di universi con fuoco, fiamme ed esplosione della tua cpu
+
 
 ## Per aggiornamenti
 
