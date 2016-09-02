@@ -1,6 +1,6 @@
-# Casino Universe Simulator
+# Simulacron
 
-Simulatore di universi con fuoco, fiamme ed esplosione della tua cpu
+Tentativo di creare un piccolo universo simulato al pc
 
 
 ## Per aggiornamenti
