@@ -17,60 +17,60 @@
  * MA 02110-1301, USA.
  */
 
-# include <vector>
-# include <array>
 
+# include <stdbool.h>
 
-using std::vector;
-using std::array;
+# define AXES 2
 
-
-class Atom
+enum Axis
 {
-	public:
-		Atom(float _radius = 1, array<float, 2> _pos = {0, 0}, array<float, 2> _speed = {0, 0},
-				array<float, 3> _color = {1, 0, 0});
-
-		float radius;
-		array<float, 2> pos; // x y
-		array<float, 2> speed; // x y
-		array<float, 3> color; // rgb, percentuale (max 1.0, min 0.0)
-
-		float axisAfter(float s, short i, float axisMax);
-		// Consente valori negativi per gli assi
-		float axisAfterNoMod(float s, short i);
-
-		static float dist(Atom a, Atom b, short i);
-		static float dist(Atom a, Atom b, float aX, float bX); // aX e bX sono la posizione di a e b
-		// Quando due atomi saranno a contatto
-		// WARNING prima di usare questa funzione assicurarsi che si scontrino
-		static float collisionTime(Atom a, Atom b, short i);
-		static bool collide(Atom a, Atom b, short i, float maxS, float axisMax);
+	X = 0,
+	Y = 1
 };
 
 
-class Universe
+enum Color
 {
-	public:
-		Universe(array<float, 2> _max, vector<Atom> _atoms = {});
-		Universe calcFuture(float s);
-
-		vector<Atom> atoms;
-		array<float, 2> max; // x y
-
-	private:
-		struct mrc
-		{
-			bool found;
-			float after;
-			unsigned atomIndex1;
-			unsigned atomIndex2;
-			short axis;
-		};
-
-		static Universe __calcFutureWithoutCollisions(Universe u, float s);
-		static struct mrc __mostRecentCollision(Universe u, float maxS);
-
-
-
+	R = 0,
+	G = 1,
+	B = 2
 };
+
+typedef struct _atom
+{
+	float rad;
+	float pos[AXES]; // xy
+	float sp[AXES]; // xy
+	float color[3]; // rgb, percentuale (max 1.0, min 0.0)
+} atom;
+
+
+typedef struct _universe
+{
+	float max[AXES]; // xy
+	atom *a;
+	unsigned an;
+} universe;
+
+
+typedef struct _mrc
+{
+	bool found;
+	float at;
+	unsigned a1; // atom index
+	unsigned a2;
+	short axis;
+} mrc;
+
+
+
+float posAfterNoMax(float s, float pos, float speed);
+float posAfter(float s, float pos, float sp, float posMax);
+float atomDist(float pos1, float pos2, float rad1, float rad2);
+float cTime(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2);
+bool collide(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2, float maxS);
+mrc findMRC(const atom *av, unsigned an, float s);
+atom * calcFutureNoColl(const atom *iav, unsigned an, float s, float axMax[AXES]);
+atom * calcFuture(const atom *iav, unsigned an, float s, float axMax[AXES]);
+float elCollV1(float v1, float v2, float m1, float m2); // elastic collision
+float elCollV2(float v1, float v2, float m1, float m2);

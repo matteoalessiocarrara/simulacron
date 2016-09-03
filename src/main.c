@@ -17,19 +17,14 @@
  * MA 02110-1301, USA.
  */
 
-# include <array>
-# include <ctime>
-# include <iostream>
+# include <stdio.h>
+# include <malloc.h>
 
 # include <SDL/SDL.h>
 # include <SDL/SDL_gfxPrimitives.h>
 # include <SDL/SDL_framerate.h>
 
 # include "physics.h"
-
-
-using std::array;
-using std::time_t;
 
 
 # define WINDOW_WIDTH 640
@@ -46,15 +41,26 @@ using std::time_t;
 
 int main()
 {
-	Universe u(
-				{UNIVERSE_WIDTH, UNIVERSE_HEIGHT},
-				{
-					Atom(1, {5, 20}, {-10, 0}, {1, 0, 0}),
-					Atom(1, {50, 20}, {0, 0}, {0, 1, 0}),
-					Atom(1, {60, 20}, {-5, 0}, {0, 1, 1}),
-					Atom(1, {10, 20}, {10, 0}, {1, 1, 0})
-				}
-				);
+	universe u = {.max = {UNIVERSE_WIDTH, UNIVERSE_HEIGHT}};
+	atom a[2] = {
+		{
+			.rad = 1,
+			.pos = {30, 20},
+			.sp = {10, 0},
+			.color = {1, 0, 0}
+		},
+		{
+			.rad = 1,
+			.pos = {50, 20},
+			.sp = {-10, 0},
+			.color = {0, 1, 0}
+		}
+	};
+
+	u.a = malloc(sizeof(atom) * 2);
+	memcpy(u.a, a, sizeof(atom) * 2);
+	u.an = 2;
+
 
 	SDL_Surface *screen;
 	SDL_Event event;
@@ -79,15 +85,17 @@ int main()
 
 		SDL_FillRect(screen, NULL, 0x000000);
 
-		for(Atom &a: u.atoms)
+		for (unsigned i = 0; i < u.an; i++)
 		{
-			filledCircleRGBA(screen, M2PX(a.pos[0]), M2PX(a.pos[1]), M2PX(a.radius), a.color[0] * 0xff, a.color[1] * 0xff, a.color[2] * 0xff, 0xff);
+			filledCircleRGBA(screen, M2PX(u.a[i].pos[X]), M2PX(u.a[i].pos[Y]),
+					M2PX(u.a[i].rad), u.a[i].color[R] * 0xff, u.a[i].color[G] * 0xff,
+					u.a[i].color[B] * 0xff, 0xff);
 		}
 
 		SDL_framerateDelay(&fpsManager);
 		SDL_Flip(screen);
 
-		u = u.calcFuture(F_S);
+		u.a = calcFuture(u.a, u.an, F_S, u.max);
 	}
 
 	quit: SDL_Quit();
