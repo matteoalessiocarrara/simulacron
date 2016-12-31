@@ -17,70 +17,93 @@
  * MA 02110-1301, USA.
  */
 
-# include <math.h>
-# include <string.h>
+# include <cmath>
+# include <cstdlib>
 # include <malloc.h>
-# include <stdbool.h>
-# include <stdlib.h>
+# include <vector>
 
-# include "physics.h"
+# include "physics.hpp"
+
+
+using std::vector;
 
 
 inline float
-posAfter(float s, float pos, float sp, float posMax)
+posAfter(const float s, const float start, const float speed, const float axisMax)
 {
-	float p = posAfterNoMax(s, pos, sp);
-	return p > 0? fmod(p, posMax) : posMax - (fmod(fabs(p), posMax));
+	const register float p = posAfterNoMax(s, start, speed);
+	return p > 0? fmod(p, axisMax) : axisMax - (fmod(fabs(p), axisMax));
 }
 
 
 inline float
-posAfterNoMax(float s, float pos, float speed)
+posAfterNoMax(const float s, const float start, const float speed)
 {
-	return pos + (speed * s);
-}
-
-
-inline float
-atomDist(float pos1, float pos2, float rad1, float rad2)
-{
-	float d = fabs(pos1 - pos2) - (rad1 + rad2);
-	return (pos1 - pos2) > 0? d : -d;
+	return start + (speed * s);
 }
 
 
 float
+atomDist(const float pos1, const float pos2)
+{
+	if (fabs(pos1 - pos2) < (ATOM_RADIUS * 2))
+		throw new AtomOverlappingException(pos1, pos2);
+
+	const register float d = fabs(pos1 - pos2) - (ATOM_RADIUS * 2);
+	return (pos1 - pos2) > 0? d : -d;
+}
+
+
+/*
+float pointCTime(float d, float sp1, float sp2)
+{
+	if (d == 0)
+		return 0;
+	if ((sp1 == sp2) || (sp1 == sp2 == 0))
+		throw PointNeverCollideException("");
+	if (sp1 != 0)
+		return ((fabs(sp1) / (fabs(sp1) + fabs(sp2))) * d) / fabs(sp1);
+	else // sp2 != 0
+		return ((fabs(sp2) / (fabs(sp1) + fabs(sp2))) * d) / fabs(sp2);
+}
+
+
+// Il momento in cui due atomi si troveranno affiancati su un asse (distanza 0)
+inline float
 cTime(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2)
 {
-	float d = fabs(atomDist(pos1, pos2, rad1, rad2));
-
-	if (sp1 != 0)
-		return ((fabs(sp1)/(fabs(sp1) + fabs(sp2))) * d) / fabs(sp1);
-	else if (sp2 != 0)
-		return ((fabs(sp2)/(fabs(sp1) + fabs(sp2))) * d) / fabs(sp2);
-	else
-		return -1; // err
+	return pointCTime(fabs(atomDist(pos1, pos2, rad1, rad2)), sp1, sp2);
 }
 
 
-bool
+inline bool
 collide(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2, float maxS)
 {
-	float currDist = atomDist(pos1, pos2, rad1, rad2);
-	float futureDist = atomDist(
-				posAfterNoMax(maxS, pos1, sp1),
-				posAfterNoMax(maxS, pos2, sp2),
-				rad1, rad2
-				);
-
-	if (
-			((currDist < 0 ) && (futureDist >= 0)) ||
-			((currDist > 0 ) && (futureDist <= 0))
-		)
-		return true;
-	else
-		return false;
+	return cTime(pos1, pos2, rad1, rad2, sp1, sp2) < maxS;
 }
+
+
+// Il momento in cui due atomi sono affiancati, i momenti successivi saranno in
+// sovrapposizione
+# define overlapStart cTime
+
+
+// Tutti gli istanti successivi non saranno sovrapposti
+inline float
+overlapEnd(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2)
+{
+	return overlapStart(pos1, pos2, rad1, rad2, sp1, sp2) + pointCTime(fabs(pos1 - pos2) + (rad1 + rad2), sp1, sp2);
+}
+
+
+inline bool
+overlap(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2, float maxS)
+{
+	return cTime(pos1, pos2, rad1, rad2, sp1, sp2) < maxS;
+}
+
+
+// Velocità risultante per il primo e secondo oggetto
 
 
 inline float
@@ -131,23 +154,9 @@ findMRC(const atom *av, unsigned an, float s)
 
 
 atom *
-calcFutureNoColl(const atom *iav, unsigned an, float s, float axMax[AXES])
-{
-	atom *oav = malloc(sizeof(atom) * an);
-	memcpy(oav, iav, sizeof(atom) * an);
-
-	for (unsigned i = 0; i < an; i++)
-		for (short j = 0; j < AXES; j++)
-			oav[i].pos[j] = posAfter(s, oav[i].pos[j], oav[i].sp[j], axMax[j]);
-
-	return oav;
-}
-
-
-atom *
 calcFuture(const atom *ia, unsigned an, float s, float axMax[AXES])
 {
-	atom *oa = malloc(sizeof(atom) * an);
+	atom *oa = (atom*) malloc(sizeof(atom) * an);
 	memcpy(oa, ia, sizeof(atom) * an);
 
 
@@ -168,6 +177,15 @@ calcFuture(const atom *ia, unsigned an, float s, float axMax[AXES])
 
 	return s > 0? calcFutureNoColl(oa, an, s, axMax) : oa;
 }
+*/
 
 
-
+void
+calcFuture(vector<atom> &av, const float s, const float axisMax[AXES])
+{
+	for (atom &a: av)
+	{
+		for (short axis = 0; axis < AXES; axis++)
+			a.pos[axis] = posAfter(s, a.pos[axis], a.sp[axis], axisMax[axis]);
+	}
+}

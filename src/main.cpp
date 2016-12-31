@@ -17,20 +17,18 @@
  * MA 02110-1301, USA.
  */
 
-# include <stdio.h>
-# include <malloc.h>
-
 # include <SDL/SDL.h>
 # include <SDL/SDL_gfxPrimitives.h>
 # include <SDL/SDL_framerate.h>
 
-# include "physics.h"
+# include "physics.hpp"
 
 
 # define WINDOW_WIDTH 640
 # define WINDOW_HEIGHT 480
 # define FPS 60
 
+// In metri
 # define UNIVERSE_WIDTH 64
 # define UNIVERSE_HEIGHT 48
 # define PX_M 10 // Quanti pixel usare per rappresentare un metro
@@ -44,22 +42,17 @@ int main()
 	universe u = {.max = {UNIVERSE_WIDTH, UNIVERSE_HEIGHT}};
 	atom a[2] = {
 		{
-			.rad = 1,
 			.pos = {30, 20},
 			.sp = {10, 0},
-			.color = {1, 0, 0}
 		},
 		{
-			.rad = 1,
 			.pos = {50, 20},
 			.sp = {-10, 0},
-			.color = {0, 1, 0}
 		}
 	};
 
-	u.a = malloc(sizeof(atom) * 2);
-	memcpy(u.a, a, sizeof(atom) * 2);
-	u.an = 2;
+	u.a.push_back(a[0]);
+	u.a.push_back(a[1]);
 
 
 	SDL_Surface *screen;
@@ -85,17 +78,15 @@ int main()
 
 		SDL_FillRect(screen, NULL, 0x000000);
 
-		for (unsigned i = 0; i < u.an; i++)
+		for (const atom b: u.a)
 		{
-			filledCircleRGBA(screen, M2PX(u.a[i].pos[X]), M2PX(u.a[i].pos[Y]),
-					M2PX(u.a[i].rad), u.a[i].color[R] * 0xff, u.a[i].color[G] * 0xff,
-					u.a[i].color[B] * 0xff, 0xff);
+			filledCircleRGBA(screen, M2PX(b.pos[X]), M2PX(b.pos[Y]), M2PX(ATOM_RADIUS), 0xff, 0, 0, 0xff);
 		}
 
 		SDL_framerateDelay(&fpsManager);
 		SDL_Flip(screen);
 
-		u.a = calcFuture(u.a, u.an, F_S, u.max);
+		calcFuture(u.a, F_S, u.max);
 	}
 
 	quit: SDL_Quit();
