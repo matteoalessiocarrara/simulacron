@@ -19,14 +19,17 @@
 
 # include <vector>
 # include <string>
+# include <utility>
 # include <stdexcept>
 
 # define AXES 2
 # define ATOM_RADIUS 1
+# define ATOM_MASS 1
 
 
 using std::vector;
 using std::to_string;
+using std::pair;
 
 
 enum Axis
@@ -50,22 +53,18 @@ typedef struct _universe
 } universe;
 
 
-/* FIXME Rivedere
 typedef struct _mrc
 {
 	bool found;
-	float at;
-	unsigned a1; // atom index
-	unsigned a2;
-	short axis;
+	float time;
+	pair<size_t, size_t> index;
 } mrc;
-*/
 
 
 float posAfterNoMax(const float s, const float start, const float speed);
 float posAfter(const float s, const float start, const float speed, const float axisMax);
 float atomDist(const float pos1, const float pos2);
-void calcFuture(vector<atom> &av, const float s, const float axisMax[AXES]);
+vector<atom> futureWithCollisions(const vector<atom> &iav, const float s, const float axisMax[AXES]);
 
 /*float cTime(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2);
 bool collide(float pos1, float pos2, float rad1, float rad2, float sp1, float sp2, float maxS);
@@ -87,10 +86,10 @@ class PointNeverCollideException: public std::runtime_error
 	public:
 		PointNeverCollideException(const std::string &msg): std::runtime_error(msg) {}
 };
-class OverlapNeverEndException: public std::runtime_error
+class InvalidCollisionException: public std::invalid_argument
 {
 	public:
-		OverlapNeverEndException(const std::string &msg): std::runtime_error(msg) {}
+		InvalidCollisionException(const std::string &msg): std::invalid_argument(msg) {}
 };
 
 

@@ -17,6 +17,8 @@
  * MA 02110-1301, USA.
  */
 
+# include <iostream>
+
 # include <SDL/SDL.h>
 # include <SDL/SDL_gfxPrimitives.h>
 # include <SDL/SDL_framerate.h>
@@ -46,8 +48,8 @@ int main()
 			.sp = {10, 0},
 		},
 		{
-			.pos = {50, 20},
-			.sp = {-10, 0},
+			.pos = {50, 30},
+			.sp = {-10, -10},
 		}
 	};
 
@@ -63,8 +65,10 @@ int main()
 	SDL_initFramerate(&fpsManager);
 	SDL_WM_SetCaption("Simulacron v1", "Simulacron v1");
 
+	SDL_putenv("SDL_VIDEO_WINDOW_POS=200,65");
 	screen = SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, 0, SDL_HWSURFACE | SDL_DOUBLEBUF);
 	SDL_setFramerate(&fpsManager, FPS);
+
 
 	while (true)
 	{
@@ -86,7 +90,7 @@ int main()
 		SDL_framerateDelay(&fpsManager);
 		SDL_Flip(screen);
 
-		calcFuture(u.a, F_S, u.max);
+		u.a = futureWithCollisions(u.a, F_S, u.max);
 	}
 
 	quit: SDL_Quit();
