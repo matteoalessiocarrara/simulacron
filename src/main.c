@@ -20,25 +20,35 @@
 # define M2PX(m) ((m) * PX_M) // meters to pixels
 
 
-int main() {
+int main(int argc, char **argv) {
+
 	SDL_Surface *screen;
 	SDL_Event event;
 	FPSmanager fpsManager;
+	FILE *af;
 	s_universe u = {.circ = U_CIRC, .a = NULL, .an = 0};
-	s_atom a[2] = {
-		{
-			.pos = {40, 30},
-			.sp = {10, 10},
-		},
-		{
-			.pos = {50, 35},
-			.sp = {-10, 0},
-		},
-	};
 
-	if ((u.a = malloc(sizeof(s_atom) * 2)) == NULL) {perror(NULL); exit(EXIT_FAILURE);}
-	memcpy(u.a, a, sizeof(s_atom) *2);
-	u.an = 2;
+	if (argc != 2) {
+		fprintf(stderr, "Usage: simulacron atoms_file\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if ((af = fopen(argv[1], "r")) == NULL) {perror(argv[1]); exit(EXIT_FAILURE);}
+	fscanf(af, "%u", &u.an);
+	if ((u.a = malloc(sizeof(s_atom) * u.an)) == NULL) {perror(NULL); exit(EXIT_FAILURE);}
+	for(register unsigned i = 0; i < u.an; i++ ) {
+		if (fscanf(af, "%f %f %f %f", &u.a[i].pos[0], &u.a[i].pos[1], &u.a[i].sp[0], &u.a[i].sp[1]) != 4) {
+			fprintf(stderr, "Warning: read %u atoms (expected %u), freeing %lu bytes\n", i, u.an, sizeof(s_atom) * (u.an - i));
+			u.a = realloc(u.a, sizeof(s_atom) * i);
+			u.an = i;
+			break;
+		}
+	}
+
+	if(u.an == 0) {
+		fprintf(stderr, "Error: universe is empty\n");
+		exit(EXIT_FAILURE);
+	}
 
 	SDL_Init(SDL_INIT_VIDEO);
 	SDL_initFramerate(&fpsManager);
