@@ -19,29 +19,27 @@ inline float posAfterNoMax(float s, float start, float speed) {
 }
 
 s_fpair atomDist(float pos1, float pos2, float u_circ) {
-	float tmp;
-	s_fpair r = {fabs(pos2 - pos1), u_circ - fabs(pos2 - pos1)};
-	if (pos2 < pos1) {tmp = r.a; r.a = r.b, r.b = tmp;}
-	if (r.a > (ATOM_RADIUS * 2)) r.a-= ATOM_RADIUS * 2; else r.a = 0;
-	if (r.b > (ATOM_RADIUS * 2)) r.b-= ATOM_RADIUS * 2; else r.b = 0;
+	register const float d1 = fabs(pos2 - pos1), d2 = u_circ - d1;
+	s_fpair r = (pos2 > pos1)? (s_fpair){d1, d2} : (s_fpair) {d2, d1};
+	r.a = (r.a > (ATOM_RADIUS * 2))? r.a - ATOM_RADIUS * 2 : 0;
+	r.b = (r.b > (ATOM_RADIUS * 2))? r.b - ATOM_RADIUS * 2 : 0;
 	return r;
 }
 
-// -1 = never collide
-inline float pointCTime(float pos1, float pos2, float sp1, float sp2, float u_circ) {
-	if (sp2 == sp1) return (pos1 != pos2)? -1 : 0;
-
+inline bool colliding(float pos1, float pos2, float u_circ) {
+	register const s_fpair d = atomDist(pos1, pos2, u_circ);
+	return (d.a < (ATOM_RADIUS * 2)) || (d.b < (ATOM_RADIUS * 2));
 }
 
-// see pointCtime
+// -1 = never collide
 inline float atomCTime(float pos1, float pos2, float sp1, float sp2, float u_circ) {
-	if (sp2 == sp1) return (fabs(pos1 - pos2) > (ATOM_RADIUS * 2))? -1 : 0;
-	s_fpair d = atomDist(pos1, pos2, u_circ);
+	if (sp2 == sp1) return colliding(pos1, pos2, u_circ)? -1 : 0;
+	register const s_fpair d = atomDist(pos1, pos2, u_circ);
 	return  fabs(((sp2 - sp1) < 0? d.a : d.b) / (sp2 - sp1));
 }
 
-inline bool atomCollide(float sp1, float sp2, float pos1, float pos2) {
-		return (sp1 != sp2) || ((sp1 == sp2) && (fabs(pos1 - pos2) <= (ATOM_RADIUS * 2)));
+inline bool atomCollide(float sp1, float sp2, float pos1, float pos2, float u_circ) {
+	return (sp1 != sp2) || colliding(pos1, pos2, u_circ);
 }
 
 inline float elCollV1(float sp1, float sp2, float m1, float m2) {
@@ -58,9 +56,8 @@ void linearFuture(s_atom *a, unsigned an, float s, float u_circ) {
 			a[an].pos[axis] = posAfter(s, a[an].pos[axis], a[an].sp[axis], u_circ);
 }
 
-// FIXME Il calcolo del futuro non funziona se si superano i limiti del piano
 void futureWithCollisions(s_atom *a, unsigned an, float s, float u_circ) {
-	struct {
+	struct s_mrc {
 		bool found;
 		float time;
 		unsigned aindex[2];
@@ -73,7 +70,7 @@ void futureWithCollisions(s_atom *a, unsigned an, float s, float u_circ) {
 			// There must be a collision on all axes
 			bool c = true;
 			for(register uint8_t axis = 0; axis < AXES; axis++)
-				c &= atomCollide(a[a1].sp[axis], a[a2].sp[axis], a[a1].pos[axis], a[a2].pos[axis]);
+				c &= atomCollide(a[a1].sp[axis], a[a2].sp[axis], a[a1].pos[axis], a[a2].pos[axis], u_circ);
 
 			// ... at the same time
 			float time;
@@ -87,15 +84,10 @@ void futureWithCollisions(s_atom *a, unsigned an, float s, float u_circ) {
 			}
 
 			// Now let's see if it is the most recent
-			if (c) {
-				if ((!mrc.found) || (time < mrc.time)) {
-					if (time < s) {
-					mrc.found = true;
-					mrc.time = time;
-					mrc.aindex[0] = a1; mrc.aindex[1] = a2;
-					}
-				}
-			}
+			if (c)
+				if ((!mrc.found) || (time < mrc.time))
+					if (time < s)
+						mrc = (struct s_mrc) {.found = true, .time = time, .aindex = {a1, a2}};
 		}
 	}
 
