@@ -27,13 +27,13 @@ s_fpair atomDist(float pos1, float pos2, float u_circ) {
 }
 
 inline bool colliding(float pos1, float pos2, float u_circ) {
-	register const s_fpair d = atomDist(pos1, pos2, u_circ);
+	const s_fpair d = atomDist(pos1, pos2, u_circ);
 	return (d.a < (ATOM_RADIUS * 2)) || (d.b < (ATOM_RADIUS * 2));
 }
 
 // -1 = never collide
 inline float atomCTime(float pos1, float pos2, float sp1, float sp2, float u_circ) {
-	if (sp2 == sp1) return colliding(pos1, pos2, u_circ)? -1 : 0;
+	if (sp2 == sp1) return colliding(pos1, pos2, u_circ)? 0 : -1;
 	register const s_fpair d = atomDist(pos1, pos2, u_circ);
 	return  fabs(((sp2 - sp1) < 0? d.a : d.b) / (sp2 - sp1));
 }
