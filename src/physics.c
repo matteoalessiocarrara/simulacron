@@ -27,8 +27,8 @@ s_fpair atomDist(float pos1, float pos2, float u_circ) {
 }
 
 inline bool colliding(float pos1, float pos2, float u_circ) {
-	const s_fpair d = atomDist(pos1, pos2, u_circ);
-	return (d.a < (ATOM_RADIUS * 2)) || (d.b < (ATOM_RADIUS * 2));
+	register const s_fpair d = atomDist(pos1, pos2, u_circ);
+	return ((d.a == 0) || (d.b == 0));
 }
 
 // -1 = never collide
