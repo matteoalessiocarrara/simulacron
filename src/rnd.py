@@ -5,22 +5,11 @@
 import random
 from sys import argv, stderr
 
-def genpos(axis):
-	try:
-		tmp = None
-		while True:
-			tmp = random.choice(range(1, int(uw)))
-			retry = False
-			for p in axis:
-				if abs(tmp - p) < 2:
-					retry = True
-					break
-			if not retry:
-				break
-		return tmp
-	except KeyboardInterrupt:
-		axis.sort()
-		exit(axis)
+def overlap(tmp, axis):
+	for p in axis:
+		if abs(tmp - p) < 2:
+			return True
+	return False
 
 uw = float(argv[1])
 atoms = int(argv[2])
@@ -28,12 +17,18 @@ atoms = int(argv[2])
 x = []
 y = []
 
-if atoms > ((uw -1) / 3):
+if atoms > (((uw -1) / 3) ** 2):
 	stderr.write("Warning: atoms is greater than (uw - 1) / 3 (%f), this can block the program\n" % ((uw -1) / 3))
 
 for i in range(atoms):
-	x.append(genpos(x))
-	y.append(genpos(y))
+	while True:
+		tmpx = random.choice(range(1, int(uw)))
+		tmpy = random.choice(range(1, int(uw)))
+		if not (overlap(tmpx, x) and overlap(tmpy, y)):
+			x.append(tmpx)
+			y.append(tmpy)
+			stderr.write("%d\n" % len(x))
+			break
 
 print(atoms)
 for i in range (atoms):
